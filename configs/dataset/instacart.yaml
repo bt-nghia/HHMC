@@ -1,6 +1,10 @@
 # Common Features
 USER_ID_FIELD: user_id
 ITEM_ID_FIELD: aisle_id
+
+CATE_ID1: cate_id
+CATE_ID2: top_k
+
 #RATING_FIELD: rating
 TIME_FIELD: timestamp
 # Selectively Loading
@@ -16,7 +20,7 @@ img_dir_name: 'img'
 
 # name of frozen features
 #vision_feature_file: 'image_feat-v1.npy'
-vision_feature_file: 'img_feat_vit.npy'
+vision_feature_file: 'img_feat.npy'
 text_feature_file: 'text_feat.npy'
 user_graph_dict_file: 'user_graph_dict.npy'
 item_graph_dict_file: 'item_graph_dict.npy'

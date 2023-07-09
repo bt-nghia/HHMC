@@ -55,11 +55,10 @@ class KSE(GeneralRecommender):
         self.co_adj = None
 
         dataset_path = os.path.abspath(config['data_path'] + config['dataset'])
-        self.user_graph_dict = np.load(os.path.join(dataset_path, config['user_graph_dict_file']), allow_pickle=True).item()
         self.item_graph_dict = np.load(os.path.join(dataset_path, config['item_graph_dict_file']), allow_pickle=True).item()
         self.user_item_dict = np.load(os.path.join(dataset_path, config['user_item_dict_file']), allow_pickle=True).item()
 
-        '''
+        ''' 
         25/6/23
         TODO(bt-nghia): add weights
         5/7/23 
@@ -91,7 +90,6 @@ class KSE(GeneralRecommender):
             self.vt_gcn = GCN(self.dataset, batch_size, num_user, num_item, dim_x, self.aggr_mode,
                               num_layer=self.num_layer, has_id=has_id, dropout=self.drop_rate, dim_latent=64,
                               device=self.device, features=self.vt_feat, user_feat=self.user_feat)
-        self.user_graph = User_Graph_sample(num_user, 'add', self.dim_latent)
         self.item_graph = Item_Graph_sample(num_item, 'add', self.dim_latent)
         # self.result_embed = nn.Parameter(nn.init.xavier_normal_(torch.tensor(np.random.randn(num_user + num_item, dim_x)))).to(self.device)
 
@@ -125,7 +123,6 @@ class KSE(GeneralRecommender):
         u_dim = item_feat.shape[1]
         for i in range(8025):
             print(i)
-            # print(self.user_graph_dict[i])
             item_inter = item_feat[self.user_item_dict[i]]
             user_feat.append(torch.mean(item_inter, dim=0))
         user_feat = torch.cat(user_feat, dim=0)
@@ -134,9 +131,9 @@ class KSE(GeneralRecommender):
         return user_feat
     
     def pre_epoch_processing(self):
-        self.epoch_user_graph, self.user_weight_matrix = self.topk_sample(self.k)
-        self.user_edge_index = self.construct_user_index(self.epoch_user_graph).to(self.device)
-        self.user_weight_matrix = self.user_weight_matrix.to(self.device)
+        # self.epoch_user_graph, self.user_weight_matrix = self.topk_sample(self.k)
+        # self.user_edge_index = self.construct_user_index(self.epoch_user_graph).to(self.device)
+        # self.user_weight_matrix = self.user_weight_matrix.to(self.device)
 
         self.epoch_item_graph, self.item_weight_matrix = self.topk_sample_item(self.k)
         self.item_edge_index = self.construct_item_index(self.epoch_item_graph).to(self.device)
@@ -226,45 +223,6 @@ class KSE(GeneralRecommender):
         score_matrix = torch.matmul(temp_user_tensor, item_tensor.t())
         return score_matrix
 
-    def topk_sample(self, k):
-        user_graph_index = []
-        count_num = 0
-        user_weight_matrix = torch.zeros(len(self.user_graph_dict), k)
-        tasike = []
-        for i in range(k):
-            tasike.append(0)
-        for i in range(len(self.user_graph_dict)):
-            if len(self.user_graph_dict[i][0]) < k:
-                count_num += 1
-                if len(self.user_graph_dict[i][0]) == 0:
-                    # pdb.set_trace()
-                    user_graph_index.append(tasike)
-                    continue
-                user_graph_sample = self.user_graph_dict[i][0][:k]
-                user_graph_weight = self.user_graph_dict[i][1][:k]
-                while len(user_graph_sample) < k:
-                    rand_index = np.random.randint(0, len(user_graph_sample))
-                    user_graph_sample.append(user_graph_sample[rand_index])
-                    user_graph_weight.append(user_graph_weight[rand_index])
-                user_graph_index.append(user_graph_sample)
-
-
-                if self.user_aggr_mode == 'softmax':
-                    user_weight_matrix[i] = F.softmax(torch.tensor(user_graph_weight), dim=0)  # softmax
-                if self.user_aggr_mode == 'mean':
-                    user_weight_matrix[i] = torch.ones(k) / k  # mean
-                continue
-            user_graph_sample = self.user_graph_dict[i][0][:k]
-            user_graph_weight = self.user_graph_dict[i][1][:k]
-
-            if self.user_aggr_mode == 'softmax':
-                user_weight_matrix[i] = F.softmax(torch.tensor(user_graph_weight), dim=0)  # softmax
-            if self.user_aggr_mode == 'mean':
-                user_weight_matrix[i] = torch.ones(k) / k  # mean
-            user_graph_index.append(user_graph_sample)
-
-        # pdb.set_trace()
-        return user_graph_index, user_weight_matrix
     
     def topk_sample_item(self, k):
         item_graph_index = []
@@ -297,22 +255,6 @@ class KSE(GeneralRecommender):
             item_graph_index.append(item_graph_sample)
 
         return item_graph_index, item_weight_matrix
-
-class User_Graph_sample(torch.nn.Module):
-    def __init__(self, num_user, aggr_mode,dim_latent):
-        super(User_Graph_sample, self).__init__()
-        self.num_user = num_user
-        self.dim_latent = dim_latent
-        self.aggr_mode = aggr_mode
-
-    def forward(self, features,user_graph, user_matrix):
-        index = user_graph
-        u_features = features[index]
-        user_matrix = user_matrix.unsqueeze(1)
-        # pdb.set_trace()
-        u_pre = torch.matmul(user_matrix, u_features)
-        u_pre = u_pre.squeeze()
-        return u_pre
     
 class Item_Graph_sample(torch.nn.Module):
     def __init__(self, num_item, aggr_mode, dim_latent) -> None:

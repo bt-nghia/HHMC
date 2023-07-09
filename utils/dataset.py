@@ -28,8 +28,8 @@ class RecDataset(object):
         self.dataset_path = os.path.abspath(config['data_path']+self.dataset_name)
 
         # dataframe
-        self.uid_field = self.config['USER_ID_FIELD']
-        self.iid_field = self.config['ITEM_ID_FIELD']
+        self.uid_field = self.config['CATE_ID1']
+        self.iid_field = self.config['CATE_ID2']
         self.splitting_label = self.config['inter_splitting_label']
 
         # Multi-modal

@@ -52,7 +52,7 @@ class AbstractDataLoader(object):
         self.neg_sampling = neg_sampling
         self.device = config['device']
 
-        self.sparsity = 1 - self.dataset.inter_num / self.dataset.user_num / self.dataset.item_num
+        # self.sparsity = 1 - self.dataset.inter_num / self.dataset.user_num / self.dataset.item_num
         self.pr = 0
         self.inter_pr = 0
 
