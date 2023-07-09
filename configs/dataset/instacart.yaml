@@ -1,0 +1,27 @@
+# Common Features
+USER_ID_FIELD: user_id
+ITEM_ID_FIELD: aisle_id
+#RATING_FIELD: rating
+TIME_FIELD: timestamp
+# Selectively Loading
+load_meta_cols: [itemID, description, title, category]
+
+TEXT_ID_FIELD: description
+filter_out_cod_start_users: True
+
+inter_file_name: 'item_item.csv' # file to train item-item interract
+user_item_inter: 'interaction.csv' # file for generate item_item.csv
+text_file_name: 'meta-games-indexed.csv'
+img_dir_name: 'img'
+
+# name of frozen features
+#vision_feature_file: 'image_feat-v1.npy'
+vision_feature_file: 'img_feat_vit.npy'
+text_feature_file: 'text_feat.npy'
+user_graph_dict_file: 'user_graph_dict.npy'
+item_graph_dict_file: 'item_graph_dict.npy'
+user_item_dict_file: 'user_item_dict.npy'
+
+max_img_size: 256
+
+field_separator: "\t"
