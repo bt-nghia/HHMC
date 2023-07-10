@@ -121,20 +121,16 @@ class KSE(GeneralRecommender):
         # user_item_dict ex: user[0] = [1,2,3,56,7,...]
         user_feat = []
         u_dim = item_feat.shape[1]
-        for i in range(8025):
-            print(i)
+        n_user = len(self.user_item_dict.keys())
+        for i in range(n_user):
+            print('this is user: ', i)
             item_inter = item_feat[self.user_item_dict[i]]
             user_feat.append(torch.mean(item_inter, dim=0))
         user_feat = torch.cat(user_feat, dim=0)
-        user_feat = user_feat.view(8025, u_dim)
-        print('ok')
+        user_feat = user_feat.view(n_user, u_dim)
         return user_feat
     
     def pre_epoch_processing(self):
-        # self.epoch_user_graph, self.user_weight_matrix = self.topk_sample(self.k)
-        # self.user_edge_index = self.construct_user_index(self.epoch_user_graph).to(self.device)
-        # self.user_weight_matrix = self.user_weight_matrix.to(self.device)
-
         self.epoch_item_graph, self.item_weight_matrix = self.topk_sample_item(self.k)
         self.item_edge_index = self.construct_item_index(self.epoch_item_graph).to(self.device)
         self.item_weight_matrix = self.item_weight_matrix.to(self.device)
@@ -222,6 +218,15 @@ class KSE(GeneralRecommender):
         temp_user_tensor = user_tensor[interaction[0], :]
         score_matrix = torch.matmul(temp_user_tensor, item_tensor.t())
         return score_matrix
+    
+    def predict(self, batch_order):
+        r'''
+            batch_order : a batch of test/valid orders
+            random 
+        '''
+        item_tensor = self.result_embed[self.n_users:]
+
+        return
 
     
     def topk_sample_item(self, k):

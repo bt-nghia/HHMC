@@ -28,9 +28,9 @@ def quick_start(model, dataset, config_dict, save_model=True):
 
     # wrap into dataloader
     train_data = TrainDataLoader(config, train_dataset, batch_size=config['train_batch_size'], shuffle=True)
-    # (valid_data, test_data) = (
-    #     EvalDataLoader(config, valid_dataset, additional_dataset=train_dataset, batch_size=config['eval_batch_size']),
-    #     EvalDataLoader(config, test_dataset, additional_dataset=train_dataset, batch_size=config['eval_batch_size']))
+    # TODO(bt-nghia): load test data, valid data
+    test_data = EvalDataLoader(config, test_dataset, additional_dataset=train_dataset, batch_size=config['eval_batch_size'])
+    valid_data = None
 
     ############ Dataset loadded, run model
     hyper_ret = []
@@ -63,7 +63,4 @@ def quick_start(model, dataset, config_dict, save_model=True):
         trainer = get_trainer()(config, model)
         # debug
         # model training
-        # best_valid_score, best_valid_result, best_test_upon_valid = trainer.fit(train_data, valid_data=valid_data, test_data=test_data, saved=save_model)
-        best_test = trainer.fit(train_data, valid_data=None, test_data=test_dataset, saved=save_model)
-
-
+        best_test = trainer.fit(train_data, valid_data = valid_data, test_data=test_data, saved=save_model)
