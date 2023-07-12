@@ -8,6 +8,7 @@
 # tools/generate-c-c-matrix.py
 import os
 import numpy as np
+import pandas as pd
 import scipy.sparse as sp
 import torch
 import torch.nn as nn
@@ -25,8 +26,6 @@ class KSE(GeneralRecommender):
     def __init__(self, config, dataset):
         super(KSE, self).__init__(config, dataset)
 
-        num_user = self.n_users
-        num_item = self.n_items
         batch_size = config['train_batch_size']
         dim_x = config['embedding_size']
         self.feat_embed_dim = config['feat_embed_dim']
@@ -35,8 +34,6 @@ class KSE(GeneralRecommender):
         self.mm_image_weight = config['mm_image_weight']
         has_id = True
         self.batch_size = batch_size
-        self.num_user = num_user
-        self.num_item = num_item
         self.k = 40 # for user
         self.aggr_mode = config['aggr_mode']
         self.user_aggr_mode = 'softmax'
@@ -54,23 +51,30 @@ class KSE(GeneralRecommender):
         self.dim_feat = 128
         self.co_adj = None
 
+        # load dataset
         dataset_path = os.path.abspath(config['data_path'] + config['dataset'])
         self.item_graph_dict = np.load(os.path.join(dataset_path, config['item_graph_dict_file']), allow_pickle=True).item()
         self.user_item_dict = np.load(os.path.join(dataset_path, config['user_item_dict_file']), allow_pickle=True).item()
+        self.user_item_edge = pd.read_csv('data/instacart/interaction.csv', sep='\t')
+        self.num_user = len(self.user_item_dict.keys())
+        self.num_item = len(self.item_graph_dict.keys())
+        print('number of users:', self.num_user)
+        print('number of item', self.num_item)
 
-        ''' 
-        25/6/23
-        TODO(bt-nghia): add weights
-        5/7/23 
-        TODO(bt-nghia): load/construct item co-occurent matrix
-        '''
+        # TODO(bt-nghia): add weights
+        # TODO(bt-nghia): load/construct item co-occurent matrix
         self.vt_feat = torch.concat([0.5 * self.t_feat, 0.5 * self.v_feat], dim=1)
-        # print('shape', self.vt_feat.shape)
 
         # packing interaction in training into edge_index
-        train_interactions = dataset.inter_matrix(form='coo').astype(np.float32)
-        edge_index = self.pack_edge_index(train_interactions)
-        self.edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous().to(self.device)
+        # train_interactions = dataset.inter_matrix(form='coo').astype(np.float32)
+        # print(train_interactions)
+        # edge_index = self.pack_edge_index(train_interactions)
+        # self.edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous().to(self.device) #edge_index is user_item edge
+        # self.edge_index = torch.cat((self.edge_index, self.edge_index[[1, 0]]), dim=1)
+        self.user_id = self.user_item_edge['user_id'].to_numpy()
+        self.item_id = self.user_item_edge['aisle_id'].to_numpy() + self.num_user # stack user above item
+        edge_index = np.array([self.user_id, self.item_id])
+        self.edge_index = torch.tensor(edge_index, dtype=torch.long).contiguous().to(self.device) #edge_index is user_item edge
         self.edge_index = torch.cat((self.edge_index, self.edge_index[[1, 0]]), dim=1)
 
         self.weight_u = nn.Parameter(nn.init.xavier_normal_(
@@ -82,25 +86,15 @@ class KSE(GeneralRecommender):
         self.weight_i.data = F.softmax(self.weight_i, dim=1)
 
         self.item_index = torch.zeros([self.num_item], dtype=torch.long)
-        index = []
-        for i in range(self.num_item):
-            self.item_index[i] = i
-            index.append(i)
-        edge_index = edge_index[np.lexsort(edge_index.T[1, None])]
-        # self.MLP_user = nn.Linear(self.dim_latent * 2, self.dim_latent)
-        '''
-        25/6/23
-        TODO(bt-nghia): GCN for vt_feat
-        '''
+        #TODO(bt-nghia): GCN for vt_feat
         self.user_feat = self.mean_items(self.vt_feat)
         if self.vt_feat is not None:
             # GCN
-            self.vt_gcn = GCN(self.dataset, batch_size, num_user, num_item, dim_x, self.aggr_mode,
+            self.vt_gcn = GCN(self.dataset, batch_size, self.num_user, self.num_item, dim_x, self.aggr_mode,
                               num_layer=self.num_layer, has_id=has_id, dropout=self.drop_rate, dim_latent=64,
                               device=self.device, features=self.vt_feat, user_feat=self.user_feat)
-        self.item_graph = Item_Graph_sample(num_item, 'add', self.dim_latent)
-        # self.result_embed = nn.Parameter(nn.init.xavier_normal_(torch.tensor(np.random.randn(num_user + num_item, dim_x)))).to(self.device)
-        self.num_user = len(self.user_item_dict.keys())
+        self.item_graph = Item_Graph_sample(self.num_item, 'add', self.dim_latent)
+        
 
     def get_knn_adj_mat(self, mm_embeddings):
         context_norm = mm_embeddings.div(torch.norm(mm_embeddings, p=2, dim=-1, keepdim=True))
@@ -177,8 +171,9 @@ class KSE(GeneralRecommender):
 
     def forward(self, interaction):
         item_nodes, pos_item_nodes, neg_item_nodes = interaction[0], interaction[1], interaction[2]
-        pos_item_nodes += self.n_users
-        neg_item_nodes += self.n_users
+        item_nodes += self.num_user
+        pos_item_nodes += self.num_user
+        neg_item_nodes += self.num_user
         representation = None
         
         if self.vt_feat is not None:
@@ -204,13 +199,12 @@ class KSE(GeneralRecommender):
         return pos_scores, neg_scores
 
     def calculate_loss(self, interaction):
-        user = interaction[0]
+        item = interaction[0] + self.num_user
         pos_scores, neg_scores = self.forward(interaction)
-        loss_value = -torch.mean(torch.log2(torch.sigmoid(pos_scores - neg_scores)))
-        reg_embedding_loss_v = (self.v_preference[user] ** 2).mean() if self.v_preference is not None else 0.0
-        reg_embedding_loss_t = (self.t_preference[user] ** 2).mean() if self.t_preference is not None else 0.0
+        loss_value = -torch.mean(torch.log2(torch.sigmoid(pos_scores - neg_scores) + 1e-10))
+        reg_emb_loss_vt = (self.vt_rep[item] ** 2).mean() if self.vt_rep is not None else 0.0
 
-        reg_loss = self.reg_weight * (reg_embedding_loss_v + reg_embedding_loss_t)
+        reg_loss = self.reg_weight * (reg_emb_loss_vt)
         if self.construction == 'weighted_sum':
             reg_loss += self.reg_weight * (self.weight_u ** 2).mean()
             reg_loss += self.reg_weight * (self.weight_i ** 2).mean()

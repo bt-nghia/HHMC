@@ -22,19 +22,18 @@ def quick_start(model, dataset, config_dict, save_model=True):
     # merge config dict
     config = Config(model, dataset, config_dict)
     # print config infor
-    config2 = config
-    config2['inter_file_name'] = 'item_item.csv'
-    config2['USER_ID_FIELD'] = 'cate_id'
-    config2['ITEM_ID_FIELD'] = 'top_k'
+    # config2['inter_file_name'] = 'item_item.csv'
+    config['USER_ID_FIELD'] = 'cate_id'
+    config['ITEM_ID_FIELD'] = 'top_k'
 
     init_logger(config)
     logger = getLogger()
     logger.info('██Server: \t' + platform.node())
     logger.info('██Dir: \t' + os.getcwd() + '\n')
+    logger.info('Config', config)
 
     # load data
     dataset = RecDataset(config)
-    dataset = RecDataset(config2)
     # print dataset statistics
 
     train_dataset, valid_dataset, test_dataset = dataset.split()

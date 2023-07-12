@@ -16,7 +16,7 @@ TEXT_ID_FIELD: description
 filter_out_cod_start_users: True
 
 # file for generate item_item.csv & testing
-inter_file_name: 'interaction.csv' 
+inter_file_name: 'item_item.csv' 
 # file to train item-item interract
 item_item_inter: 'item_item.csv' 
 text_file_name: 'meta-games-indexed.csv'
@@ -24,6 +24,7 @@ img_dir_name: 'img'
 
 # name of frozen features
 #vision_feature_file: 'image_feat-v1.npy'
+u_i_interaction_file: 'interaction.csv'
 vision_feature_file: 'img_feat.npy'
 text_feature_file: 'text_feat.npy'
 user_graph_dict_file: 'user_graph_dict.npy'
