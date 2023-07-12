@@ -105,7 +105,7 @@ def precision_(pos_index, pos_len):
     return rec_ret.mean(axis=0)
 
 def top_k_accuracy(y_pred, y_true, k):
-    # y_pred.shape = [n_sample x n_cate]
+    # y_pred.shape = [n_sample x n_cate] all cate probabilities
     # y_true.shape = [n_sample]
     # Get the top k predicted labels for each example
     top_k_labels = np.argsort(y_pred, axis=1)[:, -k:]
@@ -129,5 +129,5 @@ metrics_dict = {
     'recall2': recall2_,
     'precision': precision_,
     'map': map_,
-    'accuracy': top_k_accuracy
+    'top_k_accuracy': top_k_accuracy
 }

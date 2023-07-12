@@ -73,6 +73,14 @@ class KSE(GeneralRecommender):
         self.edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous().to(self.device)
         self.edge_index = torch.cat((self.edge_index, self.edge_index[[1, 0]]), dim=1)
 
+        self.weight_u = nn.Parameter(nn.init.xavier_normal_(
+            torch.tensor(np.random.randn(self.num_user, 2, 1), dtype=torch.float32, requires_grad=True)))
+        self.weight_u.data = F.softmax(self.weight_u, dim=1)
+
+        self.weight_i = nn.Parameter(nn.init.xavier_normal_(
+            torch.tensor(np.random.randn(self.num_item, 2, 1), dtype=torch.float32, requires_grad=True)))
+        self.weight_i.data = F.softmax(self.weight_i, dim=1)
+
         self.item_index = torch.zeros([self.num_item], dtype=torch.long)
         index = []
         for i in range(self.num_item):
@@ -92,6 +100,7 @@ class KSE(GeneralRecommender):
                               device=self.device, features=self.vt_feat, user_feat=self.user_feat)
         self.item_graph = Item_Graph_sample(num_item, 'add', self.dim_latent)
         # self.result_embed = nn.Parameter(nn.init.xavier_normal_(torch.tensor(np.random.randn(num_user + num_item, dim_x)))).to(self.device)
+        self.num_user = len(self.user_item_dict.keys())
 
     def get_knn_adj_mat(self, mm_embeddings):
         context_norm = mm_embeddings.div(torch.norm(mm_embeddings, p=2, dim=-1, keepdim=True))
@@ -219,14 +228,14 @@ class KSE(GeneralRecommender):
         score_matrix = torch.matmul(temp_user_tensor, item_tensor.t())
         return score_matrix
     
-    def predict(self, batch_order):
+    def i_i_sim(self):
         r'''
             batch_order : a batch of test/valid orders
             random 
         '''
         item_tensor = self.result_embed[self.n_users:]
-
-        return
+        item_item_score = torch.matmul(item_tensor, item_tensor.T)
+        return item_item_score
 
     
     def topk_sample_item(self, k):
@@ -297,6 +306,7 @@ class GCN(torch.nn.Module):
 
         if self.dim_latent:
             self.preference = nn.Parameter(torch.tensor(user_feat, dtype=torch.float32)).to(self.device)
+            self.MLP_user = nn.Linear(self.u_dim, dim_latent)
             self.MLP = nn.Linear(self.u_dim, 4*self.dim_latent)
             self.MLP_1 = nn.Linear(4*self.dim_latent, self.dim_latent)
             self.conv_embed_1 = Base_gcn(self.dim_latent, self.dim_latent, aggr=self.aggr_mode)
@@ -307,7 +317,8 @@ class GCN(torch.nn.Module):
 
     def forward(self, edge_index, features):
         temp_features = self.MLP_1(F.leaky_relu(self.MLP(features))) if self.dim_latent else features
-        x = torch.cat((self.preference, temp_features), dim=0).to(self.device)
+        temp_preference = self.MLP_user(self.preference)
+        x = torch.cat((temp_preference, temp_features), dim=0).to(self.device)
         x = F.normalize(x).to(self.device)
         h = self.conv_embed_1(x, edge_index)  # equation 1
         h_1 = self.conv_embed_1(h, edge_index)

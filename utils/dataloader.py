@@ -134,8 +134,8 @@ class TrainDataLoader(AbstractDataLoader):
         if self.neighborhood_loss_required:
             self.history_users_per_i = {}
             self._get_history_users_i()
-            self.user_user_dict = self._get_my_neighbors(self.config['CATE_ID1'])
-            self.item_item_dict = self._get_my_neighbors(self.config['CATE_ID2'])
+            self.user_user_dict = self._get_my_neighbors(self.config['USER_ID_FIELD'])
+            self.item_item_dict = self._get_my_neighbors(self.config['ITEM_ID_FIELD'])
 
     def pretrain_setup(self):
         """
@@ -227,17 +227,17 @@ class TrainDataLoader(AbstractDataLoader):
         cur_data = self.dataset[self.pr: self.pr + self.step]
         self.pr += self.step
         # to tensor
-        user_tensor = torch.tensor(cur_data[self.config['CATE_ID1']].values).type(torch.LongTensor).to(self.device)
-        item_tensor = torch.tensor(cur_data[self.config['CATE_ID2']].values).type(torch.LongTensor).to(self.device)
+        user_tensor = torch.tensor(cur_data[self.config['USER_ID_FIELD']].values).type(torch.LongTensor).to(self.device)
+        item_tensor = torch.tensor(cur_data[self.config['ITEM_ID_FIELD']].values).type(torch.LongTensor).to(self.device)
         batch_tensor = torch.cat((torch.unsqueeze(user_tensor, 0),
                                   torch.unsqueeze(item_tensor, 0)))
-        u_ids = cur_data[self.config['CATE_ID1']]
+        u_ids = cur_data[self.config['USER_ID_FIELD']]
         # sampling negative items only in the dataset (train)
         neg_ids = self._sample_neg_ids(u_ids).to(self.device)
         # for neighborhood loss
         if self.neighborhood_loss_required:
-            i_ids = cur_data[self.config['CATE_ID2']]
-            pos_neighbors, neg_neighbors = self._get_neighborhood_samples(i_ids, self.config['CATE_ID2'])
+            i_ids = cur_data[self.config['ITEM_ID_FIELD']]
+            pos_neighbors, neg_neighbors = self._get_neighborhood_samples(i_ids, self.config['ITEM_ID_FIELD'])
             pos_neighbors, neg_neighbors = pos_neighbors.to(self.device), neg_neighbors.to(self.device)
 
             batch_tensor = torch.cat((batch_tensor, neg_ids.unsqueeze(0),
@@ -253,8 +253,8 @@ class TrainDataLoader(AbstractDataLoader):
         cur_data = self.dataset[self.pr: self.pr + self.step]
         self.pr += self.step
         # to tensor
-        user_tensor = torch.tensor(cur_data[self.config['CATE_ID1']].values).type(torch.LongTensor).to(self.device)
-        item_tensor = torch.tensor(cur_data[self.config['CATE_ID2']].values).type(torch.LongTensor).to(self.device)
+        user_tensor = torch.tensor(cur_data[self.config['USER_ID_FIELD']].values).type(torch.LongTensor).to(self.device)
+        item_tensor = torch.tensor(cur_data[self.config['ITEM_ID_FIELD']].values).type(torch.LongTensor).to(self.device)
         batch_tensor = torch.cat((torch.unsqueeze(user_tensor, 0),
                                   torch.unsqueeze(item_tensor, 0)))
         return batch_tensor
@@ -276,8 +276,8 @@ class TrainDataLoader(AbstractDataLoader):
 
     def _get_my_neighbors(self, id_str):
         ret_dict = {}
-        a2b_dict = self.history_items_per_u if id_str == self.config['CATE_ID1'] else self.history_users_per_i
-        b2a_dict = self.history_users_per_i if id_str == self.config['CATE_ID1'] else self.history_items_per_u
+        a2b_dict = self.history_items_per_u if id_str == self.config['USER_ID_FIELD'] else self.history_users_per_i
+        b2a_dict = self.history_users_per_i if id_str == self.config['USER_ID_FIELD'] else self.history_items_per_u
         for i, j in a2b_dict.items():
             k = set()
             for m in j:
@@ -287,8 +287,8 @@ class TrainDataLoader(AbstractDataLoader):
         return ret_dict
 
     def _get_neighborhood_samples(self, ids, id_str):
-        a2a_dict = self.user_user_dict if id_str == self.config['CATE_ID1'] else self.item_item_dict
-        all_set = self.all_users_set if id_str == self.config['CATE_ID1'] else self.all_items_set
+        a2a_dict = self.user_user_dict if id_str == self.config['USER_ID_FIELD'] else self.item_item_dict
+        all_set = self.all_users_set if id_str == self.config['USER_ID_FIELD'] else self.all_items_set
         pos_ids, neg_ids = [], []
         for i in ids:
             pos_ids_my = a2a_dict[i]

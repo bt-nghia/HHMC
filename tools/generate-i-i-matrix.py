@@ -76,7 +76,7 @@ if __name__ == 	'__main__':
     # lazy: swap u-i
     uid_field = config['ITEM_ID_FIELD']
     iid_field = config['USER_ID_FIELD']
-    train_df = pd.read_csv(os.path.join(dataset_path, config['user_item_inter']), sep='\t')
+    train_df = pd.read_csv(os.path.join(dataset_path, config['interaction.csv']), sep='\t')
     num_user = len(pd.unique(train_df[uid_field]))
     train_df = train_df[train_df['x_label'] == 0].copy()
     train_data = train_df[[uid_field, iid_field]].to_numpy()

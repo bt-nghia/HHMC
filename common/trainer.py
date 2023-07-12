@@ -18,6 +18,7 @@ from logging import getLogger
 
 from utils.utils import get_local_time, early_stopping, dict2str
 from utils.topk_evaluator import TopKEvaluator
+from utils.metrics import top_k_accuracy
 
 
 
@@ -163,9 +164,10 @@ class Trainer(AbstractTrainer):
             float: valid score
             dict: valid result
         """
-        valid_result = self.evaluate(valid_data,is_test,idx)
-        valid_score = valid_result[self.valid_metric] if self.valid_metric else valid_result['NDCG@20']
-        return valid_score, valid_result
+        valid_result = self.eval(valid_data,is_test,idx)
+        # valid_score = valid_result[self.valid_metric] if self.valid_metric else valid_result['NDCG@20']
+        # return valid_score, valid_result
+        return valid_result
 
     def _check_nan(self, loss):
         if torch.isnan(loss):
@@ -215,17 +217,10 @@ class Trainer(AbstractTrainer):
             # eval: To ensure the test result is the best model under validation data, set self.eval_step == 1
             if (epoch_idx + 1) % self.eval_step == 0:
                 # test
-                _, test_result = self._valid_epoch(test_data, False, epoch_idx)
+                # _, test_result = self._valid_epoch(test_data, False, epoch_idx)
+                test_result = self._valid_epoch(test_data, False, epoch_idx)
                 if verbose:
                     self.logger.info('test result: \n' + dict2str(test_result))
-
-
-                if update_flag:
-                    update_output = '██ ' + self.config['model'] + '--Best validation results updated!!!'
-                    if verbose:
-                        self.logger.info(update_output)
-                    self.best_valid_result = valid_result
-                    self.best_test_upon_valid = test_result
         return self.best_test_upon_valid
 
 
@@ -249,6 +244,34 @@ class Trainer(AbstractTrainer):
             _, topk_index = torch.topk(scores, max(self.config['topk']), dim=-1)  # nusers x topk
             batch_matrix_list.append(topk_index)
         return self.evaluator.evaluate(batch_matrix_list, eval_data, is_test=is_test, idx=idx)
+
+
+    @torch.no_grad()
+    def eval(self, eval_data, is_test=False, idx=0):
+        """
+        from dict construct a list
+        eval the eval dataset number
+        [
+        [c1, c2, ..., c6],
+        [c1, c2, ..., c9],
+        ....
+        ] each order contains unique cate 
+
+        y_truth last
+        x : evaldata - {y}
+        """
+        item_sim = self.model.i_i_sim() # item-item similarity [134 x 134] with 134: number of categories
+        y_truth = [i[-1] for i in eval_data] # a list [n_order]
+        x = [i[0:-1] for i in eval_data] # n_order * (cate_in_order - 1)
+        y_pred = [torch.sum(item_sim[i], dim=0) for i in x] #n_order * 134
+
+        scores = {
+            'acc@5' : top_k_accuracy(y_pred, y_truth, 5),
+            'acc@10' : top_k_accuracy(y_pred, y_truth, 10),
+            'acc@20' : top_k_accuracy(y_pred, y_truth, 20),
+        }
+        return scores
+
 
     def plot_train_loss(self, show=True, save_path=None):
         r"""Plot the train loss in each epoch

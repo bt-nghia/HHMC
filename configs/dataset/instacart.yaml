@@ -4,6 +4,8 @@ ITEM_ID_FIELD: aisle_id
 
 CATE_ID1: cate_id
 CATE_ID2: top_k
+COMMON_U: weight
+
 
 #RATING_FIELD: rating
 TIME_FIELD: timestamp
@@ -13,8 +15,10 @@ load_meta_cols: [itemID, description, title, category]
 TEXT_ID_FIELD: description
 filter_out_cod_start_users: True
 
-inter_file_name: 'item_item.csv' # file to train item-item interract
-user_item_inter: 'interaction.csv' # file for generate item_item.csv
+# file for generate item_item.csv & testing
+inter_file_name: 'interaction.csv' 
+# file to train item-item interract
+item_item_inter: 'item_item.csv' 
 text_file_name: 'meta-games-indexed.csv'
 img_dir_name: 'img'
 

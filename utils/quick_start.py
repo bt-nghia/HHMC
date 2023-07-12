@@ -13,24 +13,39 @@ from utils.configurator import Config
 from utils.utils import init_seed, get_model, get_trainer, dict2str
 import platform
 import os
+import pandas as pd
+import numpy as np
+from utils.logger import init_logger
 
 
 def quick_start(model, dataset, config_dict, save_model=True):
     # merge config dict
     config = Config(model, dataset, config_dict)
     # print config infor
+    config2 = config
+    config2['inter_file_name'] = 'item_item.csv'
+    config2['USER_ID_FIELD'] = 'cate_id'
+    config2['ITEM_ID_FIELD'] = 'top_k'
+
+    init_logger(config)
+    logger = getLogger()
+    logger.info('██Server: \t' + platform.node())
+    logger.info('██Dir: \t' + os.getcwd() + '\n')
 
     # load data
     dataset = RecDataset(config)
+    dataset = RecDataset(config2)
     # print dataset statistics
 
     train_dataset, valid_dataset, test_dataset = dataset.split()
+    item_item_train = dataset.split()[0]
 
     # wrap into dataloader
-    train_data = TrainDataLoader(config, train_dataset, batch_size=config['train_batch_size'], shuffle=True)
+    train_data = TrainDataLoader(config, item_item_train, batch_size=config['train_batch_size'], shuffle=True)
     # TODO(bt-nghia): load test data, valid data
-    test_data = EvalDataLoader(config, test_dataset, additional_dataset=train_dataset, batch_size=config['eval_batch_size'])
+    # test_data = EvalDataLoader(config, test_dataset, additional_dataset=train_dataset, batch_size=config['eval_batch_size'])
     valid_data = None
+    test_data = np.load('data/instacart/test_data.npy', allow_pickle=True)
 
     ############ Dataset loadded, run model
     hyper_ret = []
@@ -58,9 +73,10 @@ def quick_start(model, dataset, config_dict, save_model=True):
         train_data.pretrain_setup()
         # model loading and initialization
         model = get_model(config['model'])(config, train_data).to(config['device'])
-
+        logger.info(model)
         # trainer loading and initialization
         trainer = get_trainer()(config, model)
         # debug
         # model training
         best_test = trainer.fit(train_data, valid_data = valid_data, test_data=test_data, saved=save_model)
+        logger.info(best_test)

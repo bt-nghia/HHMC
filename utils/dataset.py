@@ -28,9 +28,12 @@ class RecDataset(object):
         self.dataset_path = os.path.abspath(config['data_path']+self.dataset_name)
 
         # dataframe
-        self.uid_field = self.config['CATE_ID1']
-        self.iid_field = self.config['CATE_ID2']
+        self.uid_field = self.config['USER_ID_FIELD']
+        self.iid_field = self.config['ITEM_ID_FIELD']
         self.splitting_label = self.config['inter_splitting_label']
+
+        self.cate_id1 = self.config['CATE_ID1']
+        self.cate_id2 = self.config['CATE_ID2']
 
         # Multi-modal
         self.txt_features = None
@@ -51,6 +54,7 @@ class RecDataset(object):
 
         # load rating file from data path?
         self.load_inter_graph(config['inter_file_name'])
+        self.load_item_inter(config['item_item_inter'])
         self.item_num = int(max(self.df[self.iid_field].values)) + 1
         self.user_num = int(max(self.df[self.uid_field].values)) + 1
 
@@ -60,6 +64,17 @@ class RecDataset(object):
         self.df = pd.read_csv(inter_file, usecols=cols, sep=self.config['field_separator'])
         if not self.df.columns.isin(cols).all():
             raise ValueError('File {} lost some required columns.'.format(inter_file))
+        
+    def load_item_inter(self, file_name):
+        inter_file = os.path.join(self.dataset_path, file_name)
+        cols = [self.cate_id1, self.cate_id2, self.config['COMMON_U'], self.splitting_label]
+        self.df_train = pd.read_csv(inter_file, usecols=cols, sep=self.config['field_separator'])
+        self.df_train = self.df_train
+        if not self.df_train.columns.isin(cols).all():
+            raise ValueError('File {} lost some required cols'.format(inter_file))
+        
+    def get_item_item(self):
+        return self.df_train.copy()
 
     def split(self):
         dfs = []
