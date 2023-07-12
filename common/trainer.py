@@ -247,7 +247,7 @@ class Trainer(AbstractTrainer):
 
 
     @torch.no_grad()
-    def eval(self, eval_data, is_test=False, idx=0):
+    def eval(self, eval_data, is_test=False, idx=0, norm=True):
         """
         from dict construct a list
         eval the eval dataset number
@@ -260,15 +260,28 @@ class Trainer(AbstractTrainer):
         y_truth last
         x : evaldata - {y}
         """
-        item_sim = self.model.i_i_sim() # item-item similarity [134 x 134] with 134: number of categories
-        y_truth = [i[-1] for i in eval_data] # a list [n_order]
-        x = [i[0:-1] for i in eval_data] # n_order * (cate_in_order - 1)
-        y_pred = [torch.sum(item_sim[i], dim=0) for i in x] #n_order * 134
+        # item_sim = self.model.i_i_sim() # item-item similarity [134 x 134] with 134: number of categories
+        # y_truth = [i[-1] for i in eval_data] # a list [n_order]
+        # x = [i[0:-1] for i in eval_data] # n_order * (cate_in_order - 1)
+        # y_pred = [torch.sum(item_sim[i], dim=0) for i in x] #n_order * 134
 
+        # scores = {
+        #     'acc@5' : top_k_accuracy(y_pred, y_truth, 5),
+        #     'acc@10' : top_k_accuracy(y_pred, y_truth, 10),
+        #     'acc@20' : top_k_accuracy(y_pred, y_truth, 20),
+        # }
+        # return scores
+        if norm:
+            item_sim = self.model.i_i_sim()
+            X, y_truth = eval_data
+            total_rel = torch.matmul(X, item_sim)
+            weight = X.sum(-1).reshape(-1, 1)
+            total_rel = 1/weight * total_rel
+            total_rel = np.array(total_rel)
         scores = {
-            'acc@5' : top_k_accuracy(y_pred, y_truth, 5),
-            'acc@10' : top_k_accuracy(y_pred, y_truth, 10),
-            'acc@20' : top_k_accuracy(y_pred, y_truth, 20),
+            'acc@5' : top_k_accuracy(total_rel, np.array([y_truth]), 5),
+            'acc@10' : top_k_accuracy(total_rel, np.array([y_truth]), 10),
+            'acc@20' : top_k_accuracy(total_rel, np.array([y_truth]), 20),
         }
         return scores
 

@@ -1,0 +1,14 @@
+Wed 12 Jul 2023 10:12:23 INFO ██Server: 	Nghia1
+Wed 12 Jul 2023 10:12:23 INFO ██Dir: 	D:\KSE
+
+Wed 12 Jul 2023 10:12:58 INFO KSE(
+  (vt_gcn): GCN(
+    (MLP_user): Linear(in_features=1152, out_features=64, bias=True)
+    (MLP): Linear(in_features=1152, out_features=256, bias=True)
+    (MLP_1): Linear(in_features=256, out_features=64, bias=True)
+    (conv_embed_1): Base_gcn(64, 64)
+  )
+  (item_graph): Item_Graph_sample()
+)
+Trainable parameters: 34862994
+Wed 12 Jul 2023 10:12:59 INFO epoch 0 training [time: 0.52s, train loss: 0.1385]

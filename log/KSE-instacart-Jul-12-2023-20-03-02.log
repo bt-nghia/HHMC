@@ -1,0 +1,53 @@
+Wed 12 Jul 2023 20:03:02 INFO ██Server: 	Nghia1
+Wed 12 Jul 2023 20:03:02 INFO ██Dir: 	D:\KSE
+
+Wed 12 Jul 2023 20:03:33 INFO KSE(
+  (vt_gcn): GCN(
+    (MLP_user): Linear(in_features=1152, out_features=64, bias=True)
+    (MLP): Linear(in_features=1152, out_features=256, bias=True)
+    (MLP_1): Linear(in_features=256, out_features=64, bias=True)
+    (conv_embed_1): Base_gcn(64, 64)
+  )
+  (item_graph): Item_Graph_sample()
+)
+Trainable parameters: 34862994
+Wed 12 Jul 2023 20:03:35 INFO epoch 0 training [time: 0.59s, train loss: 0.1385]
+Wed 12 Jul 2023 20:03:36 INFO test result: 
+acc@5: 0.0330    acc@10: 0.0732    acc@20: 0.1597    
+Wed 12 Jul 2023 20:03:37 INFO epoch 1 training [time: 0.43s, train loss: 0.1696]
+Wed 12 Jul 2023 20:03:38 INFO test result: 
+acc@5: 0.0330    acc@10: 0.0732    acc@20: 0.1597    
+Wed 12 Jul 2023 20:03:39 INFO epoch 2 training [time: 0.45s, train loss: 0.1276]
+Wed 12 Jul 2023 20:03:40 INFO test result: 
+acc@5: 0.0330    acc@10: 0.0732    acc@20: 0.1597    
+Wed 12 Jul 2023 20:03:41 INFO epoch 3 training [time: 0.43s, train loss: 0.1223]
+Wed 12 Jul 2023 20:03:42 INFO test result: 
+acc@5: 0.0330    acc@10: 0.0732    acc@20: 0.1597    
+Wed 12 Jul 2023 20:03:43 INFO epoch 4 training [time: 0.41s, train loss: 0.1492]
+Wed 12 Jul 2023 20:03:44 INFO test result: 
+acc@5: 0.0330    acc@10: 0.0732    acc@20: 0.1597    
+Wed 12 Jul 2023 20:03:45 INFO epoch 5 training [time: 0.42s, train loss: 0.1859]
+Wed 12 Jul 2023 20:03:46 INFO test result: 
+acc@5: 0.0330    acc@10: 0.0732    acc@20: 0.1597    
+Wed 12 Jul 2023 20:03:47 INFO epoch 6 training [time: 0.44s, train loss: 0.1362]
+Wed 12 Jul 2023 20:03:48 INFO test result: 
+acc@5: 0.0330    acc@10: 0.0732    acc@20: 0.1597    
+Wed 12 Jul 2023 20:03:49 INFO epoch 7 training [time: 0.43s, train loss: 0.1380]
+Wed 12 Jul 2023 20:03:50 INFO test result: 
+acc@5: 0.0330    acc@10: 0.0732    acc@20: 0.1597    
+Wed 12 Jul 2023 20:03:51 INFO epoch 8 training [time: 0.45s, train loss: 0.1397]
+Wed 12 Jul 2023 20:03:52 INFO test result: 
+acc@5: 0.0330    acc@10: 0.0732    acc@20: 0.1597    
+Wed 12 Jul 2023 20:03:53 INFO epoch 9 training [time: 0.44s, train loss: 0.1257]
+Wed 12 Jul 2023 20:03:54 INFO test result: 
+acc@5: 0.0330    acc@10: 0.0732    acc@20: 0.1597    
+Wed 12 Jul 2023 20:03:55 INFO epoch 10 training [time: 0.43s, train loss: 0.1097]
+Wed 12 Jul 2023 20:03:56 INFO test result: 
+acc@5: 0.0330    acc@10: 0.0732    acc@20: 0.1597    
+Wed 12 Jul 2023 20:03:57 INFO epoch 11 training [time: 0.43s, train loss: 0.1109]
+Wed 12 Jul 2023 20:03:58 INFO test result: 
+acc@5: 0.0330    acc@10: 0.0732    acc@20: 0.1597    
+Wed 12 Jul 2023 20:03:59 INFO epoch 12 training [time: 0.42s, train loss: 0.1003]
+Wed 12 Jul 2023 20:04:00 INFO test result: 
+acc@5: 0.0330    acc@10: 0.0732    acc@20: 0.1597    
+Wed 12 Jul 2023 20:04:01 INFO epoch 13 training [time: 0.43s, train loss: 0.0982]

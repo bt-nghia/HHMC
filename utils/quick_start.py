@@ -45,7 +45,8 @@ def quick_start(model, dataset, config_dict, save_model=True):
     # TODO(bt-nghia): load test data, valid data
     # test_data = EvalDataLoader(config, test_dataset, additional_dataset=train_dataset, batch_size=config['eval_batch_size'])
     valid_data = None
-    test_data = np.load('data/instacart/test_data.npy', allow_pickle=True)
+    test_data = np.load('data/instacart/test_dict.npy', allow_pickle=True).item()
+    X, y_truth = test_data['adj_mat'], test_data['y_truth']
 
     ############ Dataset loadded, run model
     hyper_ret = []
@@ -78,5 +79,5 @@ def quick_start(model, dataset, config_dict, save_model=True):
         trainer = get_trainer()(config, model)
         # debug
         # model training
-        best_test = trainer.fit(train_data, valid_data = valid_data, test_data=test_data, saved=save_model)
+        best_test = trainer.fit(train_data, valid_data = valid_data, test_data=(X, y_truth), saved=save_model)
         logger.info(best_test)

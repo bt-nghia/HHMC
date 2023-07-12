@@ -127,16 +127,16 @@ class KSE(GeneralRecommender):
         return torch.sparse.FloatTensor(indices, values, adj_size)
     
     def mean_items(self, item_feat):
-        # user_item_dict ex: user[0] = [1,2,3,56,7,...]
+        # user_item_dict ex: user[0] = [1,2,3,6,7,...]
         user_feat = []
         u_dim = item_feat.shape[1]
         n_user = len(self.user_item_dict.keys())
         for i in range(n_user):
-            print('this is user: ', i)
             item_inter = item_feat[self.user_item_dict[i]]
             user_feat.append(torch.mean(item_inter, dim=0))
         user_feat = torch.cat(user_feat, dim=0)
         user_feat = user_feat.view(n_user, u_dim)
+        print('calculated means items')
         return user_feat
     
     def pre_epoch_processing(self):
@@ -200,7 +200,7 @@ class KSE(GeneralRecommender):
 
         pos_scores = torch.sum(item_tensor * pos_item_tensor, dim=1)
         neg_scores = torch.sum(item_tensor * neg_item_tensor, dim=1)
-        print('chipu')
+        print('forward complete')
         return pos_scores, neg_scores
 
     def calculate_loss(self, interaction):
@@ -233,7 +233,7 @@ class KSE(GeneralRecommender):
             batch_order : a batch of test/valid orders
             random 
         '''
-        item_tensor = self.result_embed[self.n_users:]
+        item_tensor = self.result_embed[self.num_user:]
         item_item_score = torch.matmul(item_tensor, item_tensor.T)
         return item_item_score
 
@@ -305,7 +305,8 @@ class GCN(torch.nn.Module):
         self.u_dim = user_feat.size(1)
 
         if self.dim_latent:
-            self.preference = nn.Parameter(torch.tensor(user_feat, dtype=torch.float32)).to(self.device)
+            # self.preference = nn.Parameter(torch.tensor(user_feat, dtype=torch.float32)).to(self.device)
+            self.preference = user_feat.clone().detach().requires_grad_(True).to(self.device)
             self.MLP_user = nn.Linear(self.u_dim, dim_latent)
             self.MLP = nn.Linear(self.u_dim, 4*self.dim_latent)
             self.MLP_1 = nn.Linear(4*self.dim_latent, self.dim_latent)
