@@ -108,7 +108,6 @@ def top_k_accuracy(y_pred, y_true, k, X=None):
     # y_pred.shape = [n_sample x n_cate] all cate probabilities
     # y_true.shape = [n_sample]
     # Get the top k predicted labels for each example
-    # X is the cate which we need to predict different from
     top_k_labels = np.argsort(y_pred, axis=1)[:, -k:]
 
     # Check if the true label is in the top k predicted labels for each example

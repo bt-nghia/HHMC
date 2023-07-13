@@ -258,6 +258,7 @@ class Trainer(AbstractTrainer):
         if norm:
             item_sim = self.model.i_i_sim()
             X, y_truth = eval_data
+            item_sim.cpu()
             total_rel = torch.matmul(X, item_sim)
             weight = X.sum(-1).reshape(-1, 1)
             total_rel = (1/weight) * total_rel
