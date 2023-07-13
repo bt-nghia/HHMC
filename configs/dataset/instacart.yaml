@@ -23,7 +23,6 @@ text_file_name: 'meta-games-indexed.csv'
 img_dir_name: 'img'
 
 # name of frozen features
-#vision_feature_file: 'image_feat-v1.npy'
 u_i_interaction_file: 'interaction.csv'
 vision_feature_file: 'img_feat.npy'
 text_feature_file: 'text_feat.npy'

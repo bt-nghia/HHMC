@@ -25,7 +25,6 @@ from common.init import xavier_uniform_initialization
 class KSE(GeneralRecommender):
     def __init__(self, config, dataset):
         super(KSE, self).__init__(config, dataset)
-
         batch_size = config['train_batch_size']
         dim_x = config['embedding_size']
         self.feat_embed_dim = config['feat_embed_dim']
@@ -55,7 +54,6 @@ class KSE(GeneralRecommender):
         dataset_path = os.path.abspath(config['data_path'] + config['dataset'])
         self.item_graph_dict = np.load(os.path.join(dataset_path, config['item_graph_dict_file']), allow_pickle=True).item()
         self.user_item_dict = np.load(os.path.join(dataset_path, config['user_item_dict_file']), allow_pickle=True).item()
-        self.user_item_edge = pd.read_csv('data/instacart/interaction.csv', sep='\t')
         self.num_user = len(self.user_item_dict.keys())
         self.num_item = len(self.item_graph_dict.keys())
         print('number of users:', self.num_user)
@@ -66,16 +64,7 @@ class KSE(GeneralRecommender):
         self.vt_feat = torch.concat([0.5 * self.t_feat, 0.5 * self.v_feat], dim=1)
 
         # packing interaction in training into edge_index
-        # train_interactions = dataset.inter_matrix(form='coo').astype(np.float32)
-        # print(train_interactions)
-        # edge_index = self.pack_edge_index(train_interactions)
-        # self.edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous().to(self.device) #edge_index is user_item edge
-        # self.edge_index = torch.cat((self.edge_index, self.edge_index[[1, 0]]), dim=1)
-        self.user_id = self.user_item_edge['user_id'].to_numpy()
-        self.item_id = self.user_item_edge['aisle_id'].to_numpy() + self.num_user # stack user above item
-        edge_index = np.array([self.user_id, self.item_id])
-        self.edge_index = torch.tensor(edge_index, dtype=torch.long).contiguous().to(self.device) #edge_index is user_item edge
-        self.edge_index = torch.cat((self.edge_index, self.edge_index[[1, 0]]), dim=1)
+        self.load_u_i_edge('data/instacart/interaction.csv')
 
         self.weight_u = nn.Parameter(nn.init.xavier_normal_(
             torch.tensor(np.random.randn(self.num_user, 2, 1), dtype=torch.float32, requires_grad=True)))
@@ -130,12 +119,12 @@ class KSE(GeneralRecommender):
             user_feat.append(torch.mean(item_inter, dim=0))
         user_feat = torch.cat(user_feat, dim=0)
         user_feat = user_feat.view(n_user, u_dim)
-        print('calculated means items')
+        print('calculate means items done')
         return user_feat
     
     def pre_epoch_processing(self):
         self.epoch_item_graph, self.item_weight_matrix = self.topk_sample_item(self.k)
-        self.item_edge_index = self.construct_item_index(self.epoch_item_graph).to(self.device)
+        self.item_edge_index = self.construct_index(self.epoch_item_graph).to(self.device)
         self.item_weight_matrix = self.item_weight_matrix.to(self.device)
 
     def pack_edge_index(self, inter_mat):
@@ -145,19 +134,7 @@ class KSE(GeneralRecommender):
         return np.column_stack((rows, cols))
 
     #TODO(bt-nghia) : merge 2 function
-    def construct_user_index(self, user_graph):
-        node1 = []
-        node2 = []
-        n_user = len(user_graph)
-        for i in range(0, n_user):
-            for j in user_graph[i]:
-                node1.append(i)
-                node2.append(j)
-        edge_index = torch.tensor([node1, node2])
-        edge_index = torch.cat((edge_index, edge_index[[1,0]]), dim=1)
-        return edge_index
-    
-    def construct_item_index(self, item_graph):
+    def construct_index(self, item_graph):
         node1, node2 = [], []
         n_item = len(item_graph)
         for i in range(0, n_item):
@@ -263,6 +240,17 @@ class KSE(GeneralRecommender):
             item_graph_index.append(item_graph_sample)
 
         return item_graph_index, item_weight_matrix
+
+    
+    def load_u_i_edge(self, path, cols=('user_id', 'aisle_id')):
+        self.user_item_edge = pd.read_csv(path, sep='\t')
+        self.user_id = self.user_item_edge[cols[0]].to_numpy()
+        self.item_id = self.user_item_edge[cols[1]].to_numpy() + self.num_user # stack user above item
+        edge_index = np.array([self.user_id, self.item_id])
+        self.edge_index = torch.tensor(edge_index, dtype=torch.long).contiguous().to(self.device) #edge_index is user_item edge
+        self.edge_index = torch.cat((self.edge_index, self.edge_index[[1, 0]]), dim=1)
+        # print(self.edge_index.shape)
+
     
 class Item_Graph_sample(torch.nn.Module):
     def __init__(self, num_item, aggr_mode, dim_latent) -> None:
