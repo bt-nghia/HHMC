@@ -11,6 +11,7 @@ import torch
 import torch.optim as optim
 from torch.nn.utils.clip_grad import clip_grad_norm_
 import numpy as np
+from scipy.sparse import csr_matrix
 import matplotlib.pyplot as plt
 
 from time import time
@@ -239,7 +240,7 @@ class Trainer(AbstractTrainer):
             scores = self.model.full_sort_predict(batched_data)
             masked_items = batched_data[1]
             # mask out pos items
-            scores[masked_items[0], masked_items[1]] = -1e10
+            scores[masked_items[0], masked_items[1]] = -1e2
             # rank and get top-k
             _, topk_index = torch.topk(scores, max(self.config['topk']), dim=-1)  # nusers x topk
             batch_matrix_list.append(topk_index)
@@ -249,41 +250,24 @@ class Trainer(AbstractTrainer):
     @torch.no_grad()
     def eval(self, eval_data, is_test=False, idx=0, norm=True):
         """
-        from dict construct a list
-        eval the eval dataset number
-        [
-        [c1, c2, ..., c6],
-        [c1, c2, ..., c9],
-        ....
-        ] each order contains unique cate 
-
+        eval = {X, y_truth}
+        X is co-mat
         y_truth last
         x : evaldata - {y}
         """
-        # item_sim = self.model.i_i_sim() # item-item similarity [134 x 134] with 134: number of categories
-        # y_truth = [i[-1] for i in eval_data] # a list [n_order]
-        # x = [i[0:-1] for i in eval_data] # n_order * (cate_in_order - 1)
-        # y_pred = [torch.sum(item_sim[i], dim=0) for i in x] #n_order * 134
-
-        # scores = {
-        #     'acc@5' : top_k_accuracy(y_pred, y_truth, 5),
-        #     'acc@10' : top_k_accuracy(y_pred, y_truth, 10),
-        #     'acc@20' : top_k_accuracy(y_pred, y_truth, 20),
-        # }
-        # return scores
         if norm:
             item_sim = self.model.i_i_sim()
             X, y_truth = eval_data
             total_rel = torch.matmul(X, item_sim)
             weight = X.sum(-1).reshape(-1, 1)
-            total_rel = 1/weight * total_rel
+            total_rel = (1/weight) * total_rel
             total_rel = np.array(total_rel)
-        scores = {
-            'acc@5' : top_k_accuracy(total_rel, np.array([y_truth]), 5),
-            'acc@10' : top_k_accuracy(total_rel, np.array([y_truth]), 10),
-            'acc@20' : top_k_accuracy(total_rel, np.array([y_truth]), 20),
+
+        x_pos = np.nonzero(X)
+        total_rel[x_pos[:,0], x_pos[:,1]] = -1000 # filter all X cate
+        return {
+            f'acc@{i}' : top_k_accuracy(y_pred=total_rel, y_true=np.array([y_truth]), k=i, X=X) for i in [5, 10, 15, 20]
         }
-        return scores
 
 
     def plot_train_loss(self, show=True, save_path=None):

@@ -287,7 +287,6 @@ class GCN(torch.nn.Module):
         self.u_dim = user_feat.size(1)
 
         if self.dim_latent:
-            # self.preference = nn.Parameter(torch.tensor(user_feat, dtype=torch.float32)).to(self.device)
             self.preference = user_feat.clone().detach().requires_grad_(True).to(self.device)
             self.MLP_user = nn.Linear(self.u_dim, dim_latent)
             self.MLP = nn.Linear(self.u_dim, 4*self.dim_latent)
