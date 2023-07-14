@@ -254,11 +254,11 @@ class Trainer(AbstractTrainer):
         X is co-mat
         y_truth last
         x : evaldata - {y}
+        eval = cpu
         """
         if norm:
-            item_sim = self.model.i_i_sim()
+            item_sim = self.model.i_i_sim().cpu()
             X, y_truth = eval_data
-            item_sim.cpu()
             total_rel = torch.matmul(X, item_sim)
             weight = X.sum(-1).reshape(-1, 1)
             total_rel = (1/weight) * total_rel

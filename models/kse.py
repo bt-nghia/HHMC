@@ -61,7 +61,7 @@ class KSE(GeneralRecommender):
 
         # TODO(bt-nghia): add weights
         # TODO(bt-nghia): load/construct item co-occurent matrix
-        self.vt_feat = torch.concat([0.5 * self.t_feat, 0.5 * self.v_feat], dim=1)
+        self.vt_feat = torch.concat([config['text_weight'] * self.t_feat, config['visual_weight'] * self.v_feat], dim=1)
 
         # packing interaction in training into edge_index
         self.load_u_i_edge('data/instacart/interaction.csv')
@@ -175,10 +175,11 @@ class KSE(GeneralRecommender):
         print('forward complete')
         return pos_scores, neg_scores
 
-    def calculate_loss(self, interaction):
+    def calculate_loss(self, interaction, gamma=1e-10):
+        #bpr loss + reg
         item = interaction[0] + self.num_user
         pos_scores, neg_scores = self.forward(interaction)
-        loss_value = -torch.mean(torch.log2(torch.sigmoid(pos_scores - neg_scores) + 1e-10))
+        loss_value = -torch.mean(torch.log2(torch.sigmoid(pos_scores - neg_scores) + gamma))
         reg_emb_loss_vt = (self.vt_rep[item] ** 2).mean() if self.vt_rep is not None else 0.0
 
         reg_loss = self.reg_weight * (reg_emb_loss_vt)

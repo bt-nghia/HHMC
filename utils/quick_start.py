@@ -21,8 +21,6 @@ from utils.logger import init_logger
 def quick_start(model, dataset, config_dict, save_model=True):
     # merge config dict
     config = Config(model, dataset, config_dict)
-    # print config infor
-    # config2['inter_file_name'] = 'item_item.csv'
     config['USER_ID_FIELD'] = 'cate_id'
     config['ITEM_ID_FIELD'] = 'top_k'
 
@@ -30,19 +28,16 @@ def quick_start(model, dataset, config_dict, save_model=True):
     logger = getLogger()
     logger.info('██Server: \t' + platform.node())
     logger.info('██Dir: \t' + os.getcwd() + '\n')
-    logger.info('Config', config)
+    logger.info(config)
 
     # load data
     dataset = RecDataset(config)
-    # print dataset statistics
-
     train_dataset, valid_dataset, test_dataset = dataset.split()
     item_item_train = dataset.split()[0]
 
     # wrap into dataloader
     train_data = TrainDataLoader(config, item_item_train, batch_size=config['train_batch_size'], shuffle=True)
     # TODO(bt-nghia): load test data, valid data
-    # test_data = EvalDataLoader(config, test_dataset, additional_dataset=train_dataset, batch_size=config['eval_batch_size'])
     valid_data = None
     test_data = np.load('data/instacart/test_dict.npy', allow_pickle=True).item()
     X, y_truth = test_data['adj_mat'], test_data['y_truth']
